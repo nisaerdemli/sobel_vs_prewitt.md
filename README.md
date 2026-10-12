@@ -75,4 +75,32 @@ $$S_x = \begin{bmatrix} -1 & 0 & 1 \\ -2 & 0 & 2 \\ -1 & 0 & 1 \end{bmatrix}, \q
 ## 4. Değerlendirme
 
 - **Prewitt:** Donanım seviyesinde düşük işlem gücüne ihtiyaç duyulan veya sadece toplama/çıkarma işlemlerinin desteklendiği yalın sistemler için idealdir.
+- ---
+
+# 6. Madde: 7x7 Laplacian of Gaussian (LoG) Analiz ve Kıyaslama Raporu
+
+## 1. LoG (Laplacian of Gaussian) Çekirdeği Nedir?
+Standart Laplacian filtresi ikinci dereceden türev aldığı için görüntüdeki piksel gürültülerine ve mikro yüzey pürüzlerine aşırı tepki verir. **Laplacian of Gaussian (LoG)** ise Gauss yumuşatması ile Laplacian türevini tek bir çekirdekte matematiksel olarak birleştirir:
+
+$$\text{LoG}(x, y) = -\frac{1}{\pi \sigma^4} \left( 1 - \frac{x^2 + y^2}{2\sigma^2} \right) e^{-\frac{x^2 + y^2}{2\sigma^2}}$$
+
+Bu çekirdeğin kesiti şapka formunda olduğu için literatürde **Meksika Şapkası (Mexican Hat)** olarak da adlandırılır. $7\times7$ çekirdek boyutu, $\sigma = 1.0$ yayılımının kenarlarda sıfıra yumuşak bir şekilde sönümlenmesini sağlar.
+
+---
+
+## 2. Gauss Uygulanmış ve Uygulanmamış Filtrelerin Kıyaslaması
+
+| Filtre | Gauss Ön İşleme | Çekirdek Boyutu | Gürültüye Hassasiyet | Kenar Görünümü |
+| :--- | :--- | :--- | :--- | :--- |
+| **Ham Laplacian** | Yok | $3\times3$ | **Çok Yüksek:** Tuğla yüzeyindeki tüm gözenekleri kenar zanneder. | Aşırı parazit, sahte beyaz noktacıklar. |
+| **Gauss + Sobel** | Var ($3\times3$) | $3\times3$ | **Düşük:** Merkez ağırlığı ve ön yumuşatma gürültüyü çok iyi keser. | Tuğla harç çizgileri kalın, belirgin ve tek hatlı. |
+| **7x7 LoG** | Dahili (Entegre) | $7\times7$ | **Düşük:** Gauss etkisi doğrudan çekirdeğe gömülüdür. | Yüzey parazitleri temizlenmiş, izotropik ve çift hatlı yapısal sınırlar. |
+
+---
+
+## 3. Test Sonuçları ve Değerlendirme
+
+1. **Gauss Filtresi Olmadan Laplacian:** İkinci türev doğrudan ham pikseller üzerinde çalıştığında tuğlaların pürüzlü dokusu baskın çıkmış ve asıl harç kenarları bu kumlanmanın içinde kaybolmuştur. Bu durum, ikinci türev tabanlı filtrelerde yumuşatmanın kesinlikle zorunlu olduğunu göstermektedir.
+2. **7x7 LoG Başarısı:** Çekirdeğin kendi içindeki Gauss bileşeni sayesinde ekstra bir ön işleme gerek kalmadan yüzey pürüzleri filtrelenmiş; harç çizgileri ve tuğla sınırları tüm yönlerde (izotropik olarak) temiz bir şekilde yakalanmıştır.
+3. **Sobel ile Farkı:** Sobel gradyan büyüklüğünü tek ve tok bir çizgi olarak sunarken, LoG ikinci dereceden türevin sıfır geçişi (zero-crossing) karakteristiğinden ötürü sınırların iki yanında çift hat oluşturmuştur.
 - **Sobel:** Yapısındaki yerel Gauss yumuşatması sayesinde gürültülü ve pürüzlü yüzeylerde kenarları çok daha tutarlı ve kesintisiz tespit eder. Pratikte çoğu bilgisayarlı görü uygulamasında Prewitt'e kıyasla daha yaygın tercih edilir.
