@@ -103,4 +103,40 @@ Bu çekirdeğin kesiti şapka formunda olduğu için literatürde **Meksika Şap
 1. **Gauss Filtresi Olmadan Laplacian:** İkinci türev doğrudan ham pikseller üzerinde çalıştığında tuğlaların pürüzlü dokusu baskın çıkmış ve asıl harç kenarları bu kumlanmanın içinde kaybolmuştur. Bu durum, ikinci türev tabanlı filtrelerde yumuşatmanın kesinlikle zorunlu olduğunu göstermektedir.
 2. **7x7 LoG Başarısı:** Çekirdeğin kendi içindeki Gauss bileşeni sayesinde ekstra bir ön işleme gerek kalmadan yüzey pürüzleri filtrelenmiş; harç çizgileri ve tuğla sınırları tüm yönlerde (izotropik olarak) temiz bir şekilde yakalanmıştır.
 3. **Sobel ile Farkı:** Sobel gradyan büyüklüğünü tek ve tok bir çizgi olarak sunarken, LoG ikinci dereceden türevin sıfır geçişi (zero-crossing) karakteristiğinden ötürü sınırların iki yanında çift hat oluşturmuştur.
+4. ---
+
+# 7. Madde: Canny Kenar Algoritması ve Genel Algoritma Kıyaslaması
+
+## 1. Canny Kenar Algoritmasının Çalışma Prensibi
+Canny algoritması tek bir filtreleme işleminden ibaret olmayıp, çok aşamalı (multi-stage) bir kenar tespit mimarisidir:
+1. **Gauss Yumuşatma:** Gürültüleri filtrelemek için kullanılır.
+2. **Gradyan Hesaplama:** Sobel çekirdekleriyle yoğunluk türevleri ($G_x, G_y$) ve yön açıları ($\theta$) bulunur.
+3. **Maksimum Olmayanların Bastırılması (Non-Maximum Suppression):** Gradyan yönündeki yerel tepe noktası olmayan pikseller sıfırlanarak kalın kenarlar **1 piksel genişliğe (iskelete)** inceltilir.
+4. **Histeresis Çift Eşikleme (Hysteresis Thresholding):** İki eşik değeri ($T_{low}, T_{high}$) kullanılarak zayıf ve güçlü kenarlar ayırt edilir; güçlü kenarlarla bağlantısı olmayan izole gürültüler elenir.
+
+---
+
+## 2. Kapsamlı Karşılaştırma Tablosu
+
+| Kriter | Prewitt | Sobel | 7x7 LoG | OpenCV Canny |
+| :--- | :--- | :--- | :--- | :--- |
+| **Kenar Kalınlığı** | Kalın / Gradyanlı | Kalın / Tok | Çift Çizgi Profili | **Tam 1 Piksel (İnce İskelet)** |
+| **Gürültüye Direnç** | Orta | İyi | Yüksek | **En Yüksek** (Histeresis filtrelemesi) |
+| **Doğruluk / Konumlandırma** | Orta | İyi | Zayıf (Köşe bozulmaları) | **Mükemmel** (Tam sınır tespiti) |
+| **Çıktı Türü** | Gri tonlamalı gradyan | Gri tonlamalı gradyan | Çift işaretli gradyan | **İkili (Binary: 0 veya 255)** |
+| **Hesaplama Karmaşıklığı** | Düşük (Tek filtre) | Düşük (Tek filtre) | Orta ($7\times7$ çekirdek) | Yüksek (Çok aşamalı pipeline) |
+| **Çalışma Zamanı (Performans)** | Çok Hızlı (~1-2 ms) | Çok Hızlı (OpenCV C optimizasyonu ile ~0.5-1 ms) | Hızlı (~1-2 ms) | Hızlı (Optimize C++ altyapısı sayesinde ~1-2 ms) |
+
+---
+
+## 3. Deneysel Gözlemler ve Sonuç Değerlendirmesi
+
+1. **Kenar Keskinliği ve Kalitesi:**
+   - Prewitt, Sobel ve LoG operatörleri piksel yoğunluk gradyanı ürettiğinden kenarlar kalın, bulanık ve gri tonlamalı bir hat halinde kalır; kenarın kesin sınırını belirlemek için harici eşikleme gerekir.
+   - Canny ise NMS (Non-Maximum Suppression) adımı sayesinde harç çizgilerini ve tuğla kenarlarını tam **1 piksel kalınlığında, temiz ve ikili (siyah-beyaz)** olarak üretmiştir.
+2. **Çalışma Zamanı Analizi:**
+   - Canny matematiksel olarak en karmaşık algoritma olmasına rağmen, OpenCV'nin C/C++ seviyesindeki SIMD ve çok çekirdek optimizasyonları sayesinde milisaniye mertebesinde tamamlanmaktadır.
+3. **Genel Çıkarım:**
+   - Hızlı gradyan hesaplaması veya donanım kısıtlı gömülü sistemler için **Sobel** yeterli ve dengeli bir çözümdür.
+   - Yüksek doğruluk, gürültüsüz kenar iskeleti ve nesne tanıma/segmentasyon gibi ileri seviye bilgisayarlı görü görevleri için **Canny** açık ara en üstün algoritmadır.
 - **Sobel:** Yapısındaki yerel Gauss yumuşatması sayesinde gürültülü ve pürüzlü yüzeylerde kenarları çok daha tutarlı ve kesintisiz tespit eder. Pratikte çoğu bilgisayarlı görü uygulamasında Prewitt'e kıyasla daha yaygın tercih edilir.
